@@ -20,7 +20,7 @@ function makeAnswers(overrides: Partial<Answers> = {}): Answers {
     flowName: "Issue Label Agent",
     workflowName: "Issue Label Agent",
     issueLabel: "auto-fix",
-    actionRef: "your-org/acpx-gh-action/.github/actions/run-acpx-flow@main",
+    actionRef: "code-rabi/acpx-gh-action/.github/actions/run-acpx-flow@main",
     agent,
     setupCommand: agent.setupCommand,
     authEnvName: agent.authEnvName,
@@ -56,10 +56,11 @@ describe("renderScaffold", () => {
     const { workflow } = await renderScaffold(makeAnswers());
 
     expect(workflow).toContain(
-      "uses: your-org/acpx-gh-action/.github/actions/run-acpx-flow@main",
+      "uses: code-rabi/acpx-gh-action/.github/actions/run-acpx-flow@main",
     );
     expect(workflow).toContain("default-agent: codex");
     expect(workflow).toContain("github-token: ${{ github.token }}");
+    expect(workflow).toContain("agent-auth-key: OPENAI_API_KEY");
     expect(workflow).toContain("agent-auth-value: ${{ secrets.OPENAI_API_KEY }}");
     expect(workflow).toContain(
       `input-json: '{"repo":"\${{ github.repository }}","issueNumber":"\${{ github.event.issue.number }}","label":"auto-fix"}'`,
@@ -84,7 +85,7 @@ describe("renderScaffold", () => {
       }),
     );
 
-    expect(workflow).not.toContain("agent-auth-name:");
+    expect(workflow).not.toContain("agent-auth-key:");
     expect(workflow).not.toContain("agent-auth-value:");
   });
 

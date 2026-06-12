@@ -17,8 +17,8 @@ inputs:
   github-token:
     description: GitHub token exposed to the flow as GH_TOKEN.
     required: true
-  agent-auth-name:
-    description: Optional env var name for the primary agent credential.
+  agent-auth-key:
+    description: Optional env var key for the primary agent credential.
     required: false
   agent-auth-value:
     description: Optional secret value for the primary agent credential.
@@ -44,7 +44,7 @@ runs:
       shell: bash
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
-        INPUT_AGENT_AUTH_NAME: ${{ inputs.agent-auth-name }}
+        INPUT_AGENT_AUTH_KEY: ${{ inputs.agent-auth-key }}
         INPUT_AGENT_AUTH_VALUE: ${{ inputs.agent-auth-value }}
         INPUT_EXTRA_ENV_JSON: ${{ inputs.extra-env-json }}
       run: |
@@ -58,10 +58,10 @@ runs:
           lines.push(`GH_TOKEN=${process.env.INPUT_GITHUB_TOKEN}`);
         }
 
-        const authName = String(process.env.INPUT_AGENT_AUTH_NAME ?? "").trim();
+        const authKey = String(process.env.INPUT_AGENT_AUTH_KEY ?? "").trim();
         const authValue = String(process.env.INPUT_AGENT_AUTH_VALUE ?? "");
-        if (authName) {
-          lines.push(`${authName}=${authValue}`);
+        if (authKey) {
+          lines.push(`${authKey}=${authValue}`);
         }
 
         const extraEnvJson = String(process.env.INPUT_EXTRA_ENV_JSON ?? "").trim() || "{}";
