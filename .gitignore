@@ -1,0 +1,23 @@
+node_modules
+dist
+coverage
+.vitest
+*.tsbuildinfo
+.serena
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editors and OS files
+.DS_Store
+.idea
+.vscode

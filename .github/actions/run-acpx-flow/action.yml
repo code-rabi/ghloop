@@ -1,0 +1,81 @@
+name: Run ACPX Flow
+description: Set up acpx plus an agent CLI, inject secrets into the runtime env, and run a flow file.
+
+inputs:
+  flow-path:
+    description: Path to the flow TypeScript file inside the checked-out repo.
+    required: true
+  default-agent:
+    description: Agent id to pass to acpx --default-agent.
+    required: true
+  input-json:
+    description: JSON object string passed to acpx --input-json.
+    required: true
+  setup-command:
+    description: Shell command that installs acpx and any agent prerequisites.
+    required: true
+  github-token:
+    description: GitHub token exposed to the flow as GH_TOKEN.
+    required: true
+  agent-auth-name:
+    description: Optional env var name for the primary agent credential.
+    required: false
+  agent-auth-value:
+    description: Optional secret value for the primary agent credential.
+    required: false
+  extra-env-json:
+    description: Optional JSON object of extra env vars to export before running acpx.
+    required: false
+    default: "{}"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "24"
+
+    - name: Install acpx and agent prerequisites
+      shell: bash
+      run: ${{ inputs.setup-command }}
+
+    - name: Export flow environment
+      shell: bash
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_AGENT_AUTH_NAME: ${{ inputs.agent-auth-name }}
+        INPUT_AGENT_AUTH_VALUE: ${{ inputs.agent-auth-value }}
+        INPUT_EXTRA_ENV_JSON: ${{ inputs.extra-env-json }}
+      run: |
+        node <<'NODE'
+        const fs = require("node:fs");
+
+        const envFile = process.env.GITHUB_ENV;
+        const lines = [];
+
+        if (process.env.INPUT_GITHUB_TOKEN) {
+          lines.push(`GH_TOKEN=${process.env.INPUT_GITHUB_TOKEN}`);
+        }
+
+        const authName = String(process.env.INPUT_AGENT_AUTH_NAME ?? "").trim();
+        const authValue = String(process.env.INPUT_AGENT_AUTH_VALUE ?? "");
+        if (authName) {
+          lines.push(`${authName}=${authValue}`);
+        }
+
+        const extraEnvJson = String(process.env.INPUT_EXTRA_ENV_JSON ?? "").trim() || "{}";
+        const extraEnv = JSON.parse(extraEnvJson);
+        for (const [key, value] of Object.entries(extraEnv)) {
+          lines.push(`${key}=${value ?? ""}`);
+        }
+
+        fs.appendFileSync(envFile, `${lines.join("\n")}\n`);
+        NODE
+
+    - name: Run flow
+      shell: bash
+      run: |
+        acpx --approve-all flow run "${{ inputs.flow-path }}" \
+          --default-agent "${{ inputs.default-agent }}" \
+          --input-json '${{ inputs.input-json }}'

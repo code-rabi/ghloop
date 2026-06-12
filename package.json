@@ -1,0 +1,30 @@
+{
+  "name": "acpx-gh-action",
+  "version": "0.1.0",
+  "description": "CLI to scaffold ACPX-powered GitHub issue label automations.",
+  "type": "module",
+  "packageManager": "pnpm@11.4.0",
+  "bin": {
+    "acpx-gh-action": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "templates",
+    ".github/actions",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "pnpm run build && pnpm run test",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.1",
+    "handlebars": "^4.7.8",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,38 @@
+name: {{workflowName}}
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: {{flowName}}-{{{gh "github.event.issue.number"}}}
+  cancel-in-progress: false
+
+jobs:
+  run-flow:
+    if: contains(github.event.issue.labels.*.name, '{{issueLabel}}')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run {{agentLabel}} issue flow
+        uses: {{actionRef}}
+        with:
+          flow-path: flows/{{flowName}}.ts
+          default-agent: {{agentId}}
+          input-json: '{{{json (object "repo" (gh "github.repository") "issueNumber" (gh "github.event.issue.number") "label" issueLabel)}}}'
+          setup-command: {{setupCommand}}
+          github-token: {{{gh "github.token"}}}
+{{#if authEnvName}}
+          agent-auth-name: {{authEnvName}}
+          agent-auth-value: {{{gh (concat "secrets." authEnvName)}}}
+{{/if}}
+          extra-env-json: '{{{json extraEnv}}}'

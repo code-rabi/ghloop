@@ -1,0 +1,253 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { acp, action, compute, defineFlow, extractJsonObject, shell } from "acpx/flows";
+
+const execFileAsync = promisify(execFile);
+
+type IssueLabelFlowInput = {
+  repo?: string;
+  issueNumber?: number;
+  label?: string;
+};
+
+export default defineFlow({
+  name: "{{flowName}}",
+  startAt: "load_issue",
+  nodes: {
+    load_issue: shell({
+      async exec({ input }) {
+        const repo = String((input as IssueLabelFlowInput).repo ?? "").trim();
+        const issueNumber = Number((input as IssueLabelFlowInput).issueNumber);
+
+        if (!repo || !Number.isInteger(issueNumber) || issueNumber <= 0) {
+          throw new Error(
+            'Flow input needs {"repo":"owner/name","issueNumber":123}.',
+          );
+        }
+
+        return {
+          command: "gh",
+          args: [
+            "issue",
+            "view",
+            String(issueNumber),
+            "--repo",
+            repo,
+            "--json",
+            "number,title,body,url,labels",
+          ],
+        };
+      },
+      parse: (result) => extractJsonObject(result.stdout),
+      statusDetail: "Load GitHub issue context",
+    }),
+
+    implement: acp({
+      async prompt({ input, outputs }) {
+        const flowInput = input as IssueLabelFlowInput;
+        const issue = outputs.load_issue;
+
+        return [
+          "You are running inside the repository root from GitHub Actions.",
+          "Read the issue, inspect the codebase, and implement the requested change if it is clear and safe.",
+          "Use the available tools to inspect files, edit code, and run focused verification.",
+          "Avoid speculative changes when the issue lacks enough detail.",
+          "Do not commit, push, open a PR, or comment on GitHub. The flow handles that after your turn.",
+          "Return exactly one JSON object with this shape:",
+          "{",
+          '  "summary": "short summary of what you changed or why you left the repo unchanged",',
+          '  "commitMessage": "imperative git commit message under 72 chars",',
+          '  "verification": ["command or check", "command or check"],',
+          '  "notes": ["optional note", "optional note"]',
+          "}",
+          "",
+          `Automation label: ${flowInput.label ?? "{{issueLabel}}"}`,
+          `Issue context: ${JSON.stringify(issue)}`,
+        ].join("\n");
+      },
+      parse: (text) => extractJsonObject(text),
+    }),
+
+    publish: action({
+      async run({ input, outputs }) {
+        return publishResult(
+          input as IssueLabelFlowInput,
+          outputs.implement as AgentResult | undefined,
+        );
+      },
+      statusDetail: "Commit changes, open a PR, and comment on the issue",
+    }),
+
+    finalize: compute({
+      run: ({ outputs }) => ({
+        issue: outputs.load_issue,
+        agent: outputs.implement,
+        publish: outputs.publish,
+      }),
+    }),
+  },
+  edges: [
+    { from: "load_issue", to: "implement" },
+    { from: "implement", to: "publish" },
+    { from: "publish", to: "finalize" },
+  ],
+});
+
+type AgentResult = {
+  summary?: string;
+  commitMessage?: string;
+  verification?: string[];
+  notes?: string[];
+};
+
+type PublishResult =
+  | {
+      route: "no_changes";
+      issueNumber: number;
+      summary: string;
+    }
+  | {
+      route: "opened_pr";
+      issueNumber: number;
+      branch: string;
+      prUrl: string;
+      defaultBranch: string;
+      summary: string;
+    };
+
+async function publishResult(
+  input: IssueLabelFlowInput,
+  agentResult?: AgentResult,
+): Promise<PublishResult> {
+  const repo = String(input.repo ?? "").trim();
+  const issueNumber = Number(input.issueNumber);
+  if (!repo || !Number.isInteger(issueNumber) || issueNumber <= 0) {
+    throw new Error('Flow input needs {"repo":"owner/name","issueNumber":123}.');
+  }
+
+  const summary = String(
+    agentResult?.summary ?? "Automated issue pass completed.",
+  );
+  const commitMessage = String(
+    agentResult?.commitMessage ?? `Resolve issue #${issueNumber}`,
+  ).slice(0, 72);
+  const verification = Array.isArray(agentResult?.verification)
+    ? agentResult.verification
+    : [];
+
+  const status = await runAllowFailure("git", ["status", "--porcelain"]);
+  if (!status.ok) {
+    throw new Error(status.stderr || "Unable to inspect git status.");
+  }
+
+  if (!status.stdout) {
+    await run("gh", [
+      "issue",
+      "comment",
+      String(issueNumber),
+      "--repo",
+      repo,
+      "--body",
+      ["No repository changes were produced by the automated run.", "", `Summary: ${summary}`].join("\n"),
+    ]);
+
+    return {
+      route: "no_changes",
+      issueNumber,
+      summary,
+    };
+  }
+
+  const branch = `acpx/{{flowName}}-issue-${issueNumber}`;
+  const defaultBranch = (await run("git", [
+    "symbolic-ref",
+    "refs/remotes/origin/HEAD",
+    "--short",
+  ])).replace(/^origin\//, "");
+
+  await run("git", ["config", "user.name", "github-actions[bot]"]);
+  await run("git", [
+    "config",
+    "user.email",
+    "41898282+github-actions[bot]@users.noreply.github.com",
+  ]);
+  await run("git", ["checkout", "-b", branch]);
+  await run("git", ["add", "-A"]);
+  await run("git", ["commit", "-m", commitMessage]);
+  await run("git", ["push", "--set-upstream", "origin", branch]);
+
+  const verificationText =
+    verification.length > 0
+      ? verification.map((item) => `- ${item}`).join("\n")
+      : "- Agent did not report verification steps.";
+
+  const prBody = [
+    `Closes #${issueNumber}`,
+    "",
+    summary,
+    "",
+    "Verification:",
+    verificationText,
+  ].join("\n");
+
+  const prUrl = await run("gh", [
+    "pr",
+    "create",
+    "--repo",
+    repo,
+    "--head",
+    branch,
+    "--base",
+    defaultBranch,
+    "--title",
+    commitMessage,
+    "--body",
+    prBody,
+  ]);
+
+  await run("gh", [
+    "issue",
+    "comment",
+    String(issueNumber),
+    "--repo",
+    repo,
+    "--body",
+    [`Opened automated PR: ${prUrl}`, "", `Summary: ${summary}`].join("\n"),
+  ]);
+
+  return {
+    route: "opened_pr",
+    issueNumber,
+    branch,
+    prUrl,
+    defaultBranch,
+    summary,
+  };
+}
+
+async function run(command: string, args: string[]): Promise<string> {
+  const { stdout } = await execFileAsync(command, args, {
+    encoding: "utf8",
+    env: process.env,
+  });
+  return stdout.trim();
+}
+
+async function runAllowFailure(
+  command: string,
+  args: string[],
+): Promise<{ ok: true; stdout: string } | { ok: false; stdout: string; stderr: string }> {
+  try {
+    return { ok: true, stdout: await run(command, args) };
+  } catch (error) {
+    const processError = error as NodeJS.ErrnoException & {
+      stdout?: string | Buffer;
+      stderr?: string | Buffer;
+    };
+    return {
+      ok: false,
+      stdout: String(processError.stdout ?? "").trim(),
+      stderr: String(processError.stderr ?? "").trim(),
+    };
+  }
+}
