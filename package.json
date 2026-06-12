@@ -1,11 +1,11 @@
 {
-  "name": "aglc",
+  "name": "ghloop",
   "version": "0.2.0",
-  "description": "Agentic Life Cycle CLI for scaffolding ACPX-powered GitHub issue automations.",
+  "description": "CLI for building GitHub issue-to-flow automation loops with ACPX.",
   "type": "module",
   "packageManager": "pnpm@11.4.0",
   "bin": {
-    "aglc": "dist/cli.js"
+    "ghloop": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -17,9 +17,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/code-rabi/aglc.git"
+    "url": "git+https://github.com/code-rabi/ghloop.git"
   },
-  "homepage": "https://github.com/code-rabi/aglc#readme",
+  "homepage": "https://github.com/code-rabi/ghloop#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "pnpm run build && pnpm run test",

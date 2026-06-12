@@ -1,5 +1,5 @@
-name: Run AGLC Flow
-description: Set up acpx plus an agent CLI, inject secrets into the runtime env, and run an aglc scaffolded flow file.
+name: Run GHLoop Flow
+description: Set up acpx plus an agent CLI, inject secrets into the runtime env, and run a ghloop scaffolded flow file.
 
 inputs:
   flow-path:

@@ -1,6 +1,6 @@
-# aglc
+# ghloop
 
-`aglc` is Agentic Life Cycle: a CLI for scaffolding ACPX-powered GitHub issue automation.
+`ghloop` is a CLI for scaffolding ACPX-powered GitHub issue automation loops.
 
 It generates:
 
@@ -9,7 +9,7 @@ It generates:
 
 The generated workflow always references the reusable action from this repo:
 
-- `code-rabi/aglc/.github/actions/run-acpx-flow@main`
+- `code-rabi/ghloop/.github/actions/run-acpx-flow@main`
 
 For ACPX runtime and flow authoring docs, see:
 
@@ -22,6 +22,10 @@ pnpm install
 pnpm run build
 node dist/cli.js init
 ```
+
+Installed command:
+
+- `ghloop`
 
 The CLI asks for:
 
@@ -40,7 +44,7 @@ At the end, it tells you which GitHub secrets to set and links back to this READ
 
 ```yaml
 - name: Run Codex Review
-  uses: code-rabi/aglc/.github/actions/run-acpx-flow@main
+  uses: code-rabi/ghloop/.github/actions/run-acpx-flow@main
   with:
     flow-path: flows/issue-label-agent.ts
     default-agent: codex

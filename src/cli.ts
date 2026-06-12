@@ -29,7 +29,7 @@ async function main(): Promise<void> {
   console.log("Next steps:");
   console.log("1. Commit the generated files.");
   const secrets = [answers.agent.authEnvName, ...answers.extraSecrets].filter(Boolean);
-  const readmeUrl = "https://github.com/code-rabi/aglc#readme";
+  const readmeUrl = "https://github.com/code-rabi/ghloop#readme";
   if (secrets.length > 0) {
     console.log(`2. Set these GitHub secrets: ${secrets.join(", ")}.`);
   } else {

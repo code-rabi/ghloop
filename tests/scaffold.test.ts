@@ -22,7 +22,7 @@ function makeAnswers(overrides: Partial<Answers> = {}): Answers {
     issueLabel: "auto-fix",
     agent,
     extraSecrets: ["DATABASE_URL", "NEXT_PUBLIC_APP_URL"],
-    targetDir: path.resolve("/tmp/aglc-test"),
+    targetDir: path.resolve("/tmp/ghloop-test"),
     ...overrides,
   };
 }
@@ -62,7 +62,7 @@ describe("renderScaffold", () => {
     const { workflow } = await renderScaffold(makeAnswers());
 
     expect(workflow).toContain(
-      "uses: code-rabi/aglc/.github/actions/run-acpx-flow@main",
+      "uses: code-rabi/ghloop/.github/actions/run-acpx-flow@main",
     );
     expect(workflow).toContain("default-agent: codex");
     expect(workflow).toContain("github-token: ${{ github.token }}");

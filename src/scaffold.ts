@@ -98,7 +98,7 @@ export async function renderScaffold(answers: Answers): Promise<{
     flowName: toKebabCase(answers.flowName),
     workflowName: toWorkflowName(answers.agent.label, answers.issueLabel),
     issueLabel: answers.issueLabel,
-    actionRef: "code-rabi/aglc/.github/actions/run-acpx-flow@main",
+    actionRef: "code-rabi/ghloop/.github/actions/run-acpx-flow@main",
     agentId: answers.agent.id,
     agentLabel: answers.agent.label,
     setupCommand: answers.agent.setupCommand,
