@@ -1,6 +1,6 @@
 {
   "name": "ghloop",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI for building GitHub issue-to-flow automation loops with ACPX.",
   "type": "module",
   "packageManager": "pnpm@11.4.0",
@@ -28,10 +28,12 @@
   "engines": {
     "node": ">=20"
   },
-  "devDependencies": {
+  "dependencies": {
     "@inquirer/prompts": "^8.5.2",
+    "handlebars": "^4.7.8"
+  },
+  "devDependencies": {
     "@types/node": "^24.0.1",
-    "handlebars": "^4.7.8",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }

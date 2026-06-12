@@ -1,44 +1,38 @@
 # ghloop
 
-`ghloop` is a CLI for scaffolding ACPX-powered GitHub issue automation loops.
+Convert your repo into a full agentic SDLC loop with one command.
 
-It generates:
+```bash
+npx ghloop init
+```
+
+`ghloop` scaffolds an [ACPX-powered](https://github.com/openclaw/acpx) GitHub Action plus a matching flow so a GitHub issue label can trigger an agent, run a workflow, and open a PR back into the repo.
+
+## What It Adds
 
 - `.github/workflows/<flow-name>.yml`
 - `flows/<flow-name>.ts`
 
-The generated workflow always references the reusable action from this repo:
+Generated workflows use the reusable action from this repo:
 
 - `code-rabi/ghloop/.github/actions/run-acpx-flow@main`
 
-For ACPX runtime and flow authoring docs, see:
+You can view the [source here](/.github/actions/run-acpx-flow/action.yml)
 
-- https://github.com/openclaw/acpx
-
-## Usage
-
-```bash
-pnpm install
-pnpm run build
-node dist/cli.js init
-```
-
-Installed command:
-
-- `ghloop`
-
-The CLI asks for:
+## What The CLI Asks
 
 - flow name
 - coding agent
 - GitHub issue label
 
-It always:
+It derives the agent auth key when one is known and tells you which GitHub secrets to set at the end.
 
-- generates into the current repository
-- derives the agent auth secret key from the selected agent when one is known
+Known built-in agent secrets:
 
-At the end, it tells you which GitHub secrets to set and links back to this README for more details.
+- `codex`: `OPENAI_API_KEY`
+- `claude`: `ANTHROPIC_API_KEY`
+- `gemini`: `GEMINI_API_KEY`
+- `cursor`: `CURSOR_API_KEY`
 
 ## Example
 
@@ -55,20 +49,34 @@ At the end, it tells you which GitHub secrets to set and links back to this READ
     agent-auth-value: ${{ secrets.OPENAI_API_KEY }}
 ```
 
-## Known Agent Secrets
+## ACPX
 
-- `codex`: `OPENAI_API_KEY`
-- `claude`: `ANTHROPIC_API_KEY`
-- `gemini`: `GEMINI_API_KEY`
-- `cursor`: `CURSOR_API_KEY`
+For ACPX runtime and flow authoring docs:
 
-Other agents may not have a baked-in auth secret name yet.
+- https://github.com/openclaw/acpx
+- https://acpx.sh/flows.html
 
-## CI And Publishing
+## Publishing
 
 This repo includes:
 
 - `.github/workflows/ci.yml` for build and test
 - `.github/workflows/publish.yml` for npm trusted publishing
 
-To use secure npm publishing, configure npm to trust this repository and the `.github/workflows/publish.yml` workflow as a trusted publisher. On GitHub-hosted runners this uses OIDC instead of an `NPM_TOKEN`, and npm provenance is generated automatically.
+If you publish your own fork or package, configure npm to trust the `.github/workflows/publish.yml` workflow as a trusted publisher.
+
+Release flow:
+
+1. Bump `package.json` to the version you want to publish.
+2. Commit and push it.
+3. Create a GitHub release with tag `v<package.json version>`.
+
+The publish workflow validates that the GitHub release tag matches `package.json`.
+
+## Contributing
+
+```bash
+pnpm install
+pnpm run build
+pnpm run test
+```
