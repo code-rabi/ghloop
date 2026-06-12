@@ -6,6 +6,10 @@ The default scaffold listens for a specific GitHub issue label, runs a chosen co
 
 This repo also now ships a reusable composite action at `.github/actions/run-acpx-flow`, so generated workflows can reference a real `uses:` target instead of inlining the `acpx` bootstrap.
 
+For ACPX runtime and flow authoring docs, see:
+
+- https://github.com/openclaw/acpx
+
 ## What it generates
 
 - `.github/workflows/<flow-name>.yml`
@@ -60,14 +64,14 @@ Example:
 
 ```yaml
 - name: Run Codex Review
-  uses: your-org/acpx-gh-action/.github/actions/run-acpx-flow@main
+  uses: code-rabi/acpx-gh-action/.github/actions/run-acpx-flow@main
   with:
     flow-path: flows/issue-label-agent.ts
     default-agent: codex
     input-json: '{"repo":"${{ github.repository }}","issueNumber":${{ github.event.issue.number }}}'
     setup-command: npm install -g acpx @openai/codex
     github-token: ${{ github.token }}
-    agent-auth-name: OPENAI_API_KEY
+    agent-auth-key: OPENAI_API_KEY
     agent-auth-value: ${{ secrets.OPENAI_API_KEY }}
 ```
 
