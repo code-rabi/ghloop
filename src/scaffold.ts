@@ -12,12 +12,8 @@ export type AgentConfig = {
 
 export type Answers = {
   flowName: string;
-  workflowName: string;
   issueLabel: string;
-  actionRef: string;
   agent: AgentConfig;
-  setupCommand: string;
-  authEnvName?: string;
   extraSecrets: string[];
   targetDir: string;
 };
@@ -43,7 +39,12 @@ export const AGENTS: AgentConfig[] = [
     setupCommand: "pnpm add -g acpx @google/gemini-cli",
     authEnvName: "GEMINI_API_KEY",
   },
-  { id: "cursor", label: "Cursor CLI", setupCommand: "pnpm add -g acpx" },
+  {
+    id: "cursor",
+    label: "Cursor CLI",
+    setupCommand: "pnpm add -g acpx",
+    authEnvName: "CURSOR_API_KEY",
+  },
   { id: "copilot", label: "GitHub Copilot CLI", setupCommand: "pnpm add -g acpx" },
   { id: "droid", label: "Factory Droid", setupCommand: "pnpm add -g acpx" },
   { id: "fast-agent", label: "fast-agent", setupCommand: "pnpm add -g acpx" },
@@ -95,13 +96,13 @@ export async function renderScaffold(answers: Answers): Promise<{
 
   const context: TemplateContext = {
     flowName: toKebabCase(answers.flowName),
-    workflowName: answers.workflowName,
+    workflowName: toWorkflowName(answers.agent.label, answers.issueLabel),
     issueLabel: answers.issueLabel,
-    actionRef: answers.actionRef,
+    actionRef: "code-rabi/aglc/.github/actions/run-acpx-flow@main",
     agentId: answers.agent.id,
     agentLabel: answers.agent.label,
-    setupCommand: answers.setupCommand,
-    authEnvName: answers.authEnvName,
+    setupCommand: answers.agent.setupCommand,
+    authEnvName: answers.agent.authEnvName,
     extraEnv: Object.fromEntries(
       answers.extraSecrets.map((secretName) => [secretName, `\${{ secrets.${secretName} }}`]),
     ),
@@ -184,6 +185,10 @@ export function toTitleCase(value: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+export function toWorkflowName(agentLabel: string, issueLabel: string): string {
+  return `${agentLabel} - ${toTitleCase(toKebabCase(issueLabel))}`;
 }
 
 export function toEnvVarName(value: string): string {

@@ -1,18 +1,25 @@
 {
-  "name": "acpx-gh-action",
-  "version": "0.1.0",
-  "description": "CLI to scaffold ACPX-powered GitHub issue label automations.",
+  "name": "aglc",
+  "version": "0.2.0",
+  "description": "Agentic Life Cycle CLI for scaffolding ACPX-powered GitHub issue automations.",
   "type": "module",
   "packageManager": "pnpm@11.4.0",
   "bin": {
-    "acpx-gh-action": "dist/cli.js"
+    "aglc": "dist/cli.js"
   },
   "files": [
     "dist",
     "templates",
     ".github/actions",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/code-rabi/aglc.git"
+  },
+  "homepage": "https://github.com/code-rabi/aglc#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "pnpm run build && pnpm run test",
@@ -22,6 +29,7 @@
     "node": ">=20"
   },
   "devDependencies": {
+    "@inquirer/prompts": "^8.5.2",
     "@types/node": "^24.0.1",
     "handlebars": "^4.7.8",
     "typescript": "^5.8.3",

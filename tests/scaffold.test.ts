@@ -7,6 +7,7 @@ import {
   toEnvVarName,
   toKebabCase,
   toTitleCase,
+  toWorkflowName,
   type Answers,
 } from "../src/scaffold.js";
 
@@ -18,14 +19,10 @@ function makeAnswers(overrides: Partial<Answers> = {}): Answers {
 
   return {
     flowName: "Issue Label Agent",
-    workflowName: "Issue Label Agent",
     issueLabel: "auto-fix",
-    actionRef: "code-rabi/acpx-gh-action/.github/actions/run-acpx-flow@main",
     agent,
-    setupCommand: agent.setupCommand,
-    authEnvName: agent.authEnvName,
     extraSecrets: ["DATABASE_URL", "NEXT_PUBLIC_APP_URL"],
-    targetDir: path.resolve("/tmp/acpx-gh-action-test"),
+    targetDir: path.resolve("/tmp/aglc-test"),
     ...overrides,
   };
 }
@@ -39,6 +36,10 @@ describe("utility transforms", () => {
     expect(toTitleCase("issue-label-agent")).toBe("Issue Label Agent");
   });
 
+  it("derives workflow name from agent and label", () => {
+    expect(toWorkflowName("Codex", "auto-fix")).toBe("Codex - Auto Fix");
+  });
+
   it("normalizes env vars", () => {
     expect(toEnvVarName("next public-app url")).toBe("NEXT_PUBLIC_APP_URL");
   });
@@ -49,6 +50,11 @@ describe("utility transforms", () => {
       "NEXT_PUBLIC_APP_URL",
     ]);
   });
+
+  it("includes a baked-in auth key for Cursor", () => {
+    const cursor = AGENTS.find((entry) => entry.id === "cursor");
+    expect(cursor?.authEnvName).toBe("CURSOR_API_KEY");
+  });
 });
 
 describe("renderScaffold", () => {
@@ -56,7 +62,7 @@ describe("renderScaffold", () => {
     const { workflow } = await renderScaffold(makeAnswers());
 
     expect(workflow).toContain(
-      "uses: code-rabi/acpx-gh-action/.github/actions/run-acpx-flow@main",
+      "uses: code-rabi/aglc/.github/actions/run-acpx-flow@main",
     );
     expect(workflow).toContain("default-agent: codex");
     expect(workflow).toContain("github-token: ${{ github.token }}");
@@ -79,8 +85,6 @@ describe("renderScaffold", () => {
     const { workflow } = await renderScaffold(
       makeAnswers({
         agent: openclaw,
-        setupCommand: openclaw.setupCommand,
-        authEnvName: undefined,
         extraSecrets: [],
       }),
     );
